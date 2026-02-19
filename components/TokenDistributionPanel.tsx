@@ -29,8 +29,26 @@ export function TokenDistributionPanel({
 
   const winnerCount = winnerWords?.size ?? 0;
 
+  // How many ghost cards to show (capped at 3, min 0)
+  const ghostCount = Math.min(tokens.length > 0 ? tokens.length - 1 : 0, 3);
+
   return (
-    <Card>
+    // Stacked-card wrapper: ghost cards sit behind to suggest "one of N distributions"
+    <div className="relative" style={{ paddingLeft: ghostCount * 1, paddingTop: ghostCount * 1 }}>
+      {Array.from({ length: ghostCount }).map((_, g) => {
+        const depth = ghostCount - g; // furthest card first
+        return (
+          <div
+            key={g}
+            className="absolute inset-0 rounded-xl border border-border bg-card"
+            style={{
+              transform: `translate(-${depth * 5}px, -${depth * 3}px)`,
+              opacity: 0.4 + (g / ghostCount) * 0.25,
+            }}
+          />
+        );
+      })}
+      <Card className="relative">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <CardTitle className="text-sm font-medium">
@@ -71,6 +89,7 @@ export function TokenDistributionPanel({
           <p className="text-sm text-muted-foreground italic">No weights for this token.</p>
         )}
       </CardContent>
-    </Card>
+      </Card>
+    </div>
   );
 }
