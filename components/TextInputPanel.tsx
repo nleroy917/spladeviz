@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { MODELS } from '@/lib/models';
 import type { LoadStatus, InferenceStatus } from '@/hooks/useSpladeWorker';
 
 type Props = {
@@ -12,7 +12,11 @@ type Props = {
   loadProgressFile: string;
   inferenceStatus: InferenceStatus;
   onAnalyze: (text: string) => void;
+  modelId: string;
+  onModelChange: (modelId: string) => void;
 };
+
+const availableModels = MODELS.filter((m) => m.hasOnnxWeights);
 
 export function TextInputPanel({
   loadStatus,
@@ -20,6 +24,8 @@ export function TextInputPanel({
   loadProgressFile,
   inferenceStatus,
   onAnalyze,
+  modelId,
+  onModelChange,
 }: Props) {
   const [text, setText] = useState('the black cat sat on the mat');
 
@@ -27,7 +33,7 @@ export function TextInputPanel({
   const isRunning = inferenceStatus === 'running';
   const isLoading = loadStatus === 'loading';
 
-  function handleSubmit(e: FormEvent) {
+  function handleSubmit(e: { preventDefault(): void }) {
     e.preventDefault();
     if (isReady && text.trim() && !isRunning) {
       onAnalyze(text.trim());
@@ -36,25 +42,50 @@ export function TextInputPanel({
 
   return (
     <div className="space-y-3">
-      <form onSubmit={handleSubmit} className="flex gap-2">
-        <Input
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="Enter query text…"
-          disabled={!isReady || isRunning}
-          className="flex-1"
-        />
-        <Button
-          type="submit"
-          disabled={!isReady || isRunning || !text.trim()}
-        >
-          {isRunning ? 'Analyzing…' : 'Analyze'}
-        </Button>
+      <form onSubmit={handleSubmit}>
+        {/* Unified pill: [Model ▾] | [text input] | [Analyze] */}
+        <div className="flex items-stretch border border-border rounded-lg bg-card overflow-hidden">
+
+          {/* Model selector */}
+          <div className="relative flex items-center border-r border-border shrink-0">
+            <select
+              value={modelId}
+              onChange={(e) => onModelChange(e.target.value)}
+              disabled={isRunning}
+              className="appearance-none bg-transparent text-sm font-medium pl-4 pr-8 py-3 cursor-pointer focus:outline-none text-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {availableModels.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.label}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-2.5 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+          </div>
+
+          {/* Text input */}
+          <input
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Enter query text…"
+            disabled={!isReady || isRunning}
+            className="flex-1 min-w-0 px-4 py-3 bg-transparent text-sm focus:outline-none placeholder:text-muted-foreground disabled:opacity-50"
+          />
+
+          {/* Analyze button */}
+          <button
+            type="submit"
+            disabled={!isReady || isRunning || !text.trim()}
+            className="border-l border-border px-5 py-3 text-sm font-medium shrink-0 transition-colors hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {isRunning ? 'Analyzing…' : 'Analyze'}
+          </button>
+        </div>
       </form>
 
       {isLoading && (
         <div className="space-y-1">
-          <Progress value={loadProgress} className="h-1.5" />
+          <Progress value={loadProgress} className="h-1" />
           <p className="text-xs text-muted-foreground truncate">
             {loadProgressFile
               ? `Downloading ${loadProgressFile.split('/').pop()}… ${Math.round(loadProgress)}%`
@@ -64,13 +95,13 @@ export function TextInputPanel({
       )}
 
       {loadStatus === 'error' && (
-        <p className="text-xs text-destructive-foreground bg-destructive/20 rounded px-2 py-1">
+        <p className="text-xs text-destructive bg-destructive/10 rounded px-2 py-1">
           Failed to load model. Check console for details.
         </p>
       )}
 
       {inferenceStatus === 'error' && (
-        <p className="text-xs text-destructive-foreground bg-destructive/20 rounded px-2 py-1">
+        <p className="text-xs text-destructive bg-destructive/10 rounded px-2 py-1">
           Inference failed. Check console for details.
         </p>
       )}

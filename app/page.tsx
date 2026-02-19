@@ -46,7 +46,6 @@ export default function Home() {
         modelId={state.modelId}
         loadStatus={state.loadStatus}
         fromCache={state.fromCache}
-        onModelChange={(id) => { if (id !== state.modelId) loadModel(id); }}
       />
 
       <main className="flex-1 max-w-6xl w-full mx-auto px-6 py-8 space-y-6">
@@ -56,6 +55,8 @@ export default function Home() {
           loadProgressFile={state.loadProgressFile}
           inferenceStatus={state.inferenceStatus}
           onAnalyze={runInference}
+          modelId={state.modelId}
+          onModelChange={(id) => { if (id !== state.modelId) loadModel(id); }}
         />
 
         {hasResults && (
