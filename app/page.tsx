@@ -118,8 +118,8 @@ export default function Home() {
               problem." That's true, but it doesn't explain <em>how</em>. The core insight is
               simple: SPLADE repurposes the masked language modeling objective that BERT was already
               trained on. By running a forward pass over the query and reading the token-prediction
-              distributions at every position, SPLADE gets contextually-grounded query expansion
-              for free—no fine-tuning required to get the basic behavior.
+              distributions at every position, SPLADE gets contextually-grounded query expansion for
+              free—no fine-tuning required to get the basic behavior.
             </p>
             <p>
               The rest of this page builds that intuition from the ground up, starting with the
@@ -130,9 +130,7 @@ export default function Home() {
           {/* ── The problem: vocabulary mismatch ── */}
           <div className="space-y-3">
             <h2>The vocabulary mismatch problem</h2>
-            <p>
-              Imagine a developer documentation search system. A programmer searches for:
-            </p>
+            <p>Imagine a developer documentation search system. A programmer searches for:</p>
             <blockquote>"python memory management"</blockquote>
             <p>But the relevant documents use more specific terminology:</p>
             <blockquote>"garbage collection in CPython"</blockquote>
@@ -140,9 +138,13 @@ export default function Home() {
             <blockquote>"PyObject allocation and deallocation"</blockquote>
             <p>
               BM25 partially works here—it matches on "python" and "memory"—but misses any document
-              that describes the concept without using those exact words. The fix is{' '}
-              <strong>query expansion</strong>: augment each query token with semantically related
-              terms so the search can bridge the lexical gap.
+              that describes the concept without using those exact words. For example, a page about
+              "garbage collection" might be highly relevant to the user's information need, but BM25
+              won't rank it well because it doesn't contain the token "memory." This is the
+              vocabulary mismatch problem: the words in the query don't exactly match the words in
+              relevant documents, even though they're semantically related. To address this problem,
+              we need to introduce <strong>query expansion</strong>: augment each query token with
+              semantically related terms so the search can bridge the lexical gap.
             </p>
             <TokenExpansionDiagram />
           </div>
@@ -155,9 +157,12 @@ export default function Home() {
               (like GloVe) and retrieve its nearest neighbors. The problem is that static embeddings
               have no notion of context—each word gets a single fixed vector regardless of how it's
               used. The embedding for "python" is a weighted average of every context it appears in
-              across the training corpus: the programming language,{' '}
-              <em>and</em> the snake. Depending on the corpus, that can pull in genuinely unhelpful
-              neighbors. Try it below.
+              across the training corpus: the programming language, <em>and</em> the snake.
+              Depending on the corpus, that can pull in genuinely unhelpful neighbors. Use the
+              word-similarity finder below to see for yourself: click any token in the query and see
+              its nearest neighbors in GloVe space. Notice how the neighbors for "python" largely
+              include other anmials, with a single "donwloadable" neighbor that happens to co-occur
+              in the same contexts as "python" but isn't actually a programming language at all.
             </p>
             <GloveSimilarityPanel />
           </div>
@@ -171,12 +176,10 @@ export default function Home() {
               "python" in the context of "memory management" and predicts accordingly. When the word
               "python" is masked in "documentation for memory management for the{' '}
               <span className="rounded bg-amber-50 px-0.5 font-mono text-amber-800">[MASK]</span>{' '}
-              language," BERT should strongly predict <em>python</em>—and its runner-up predictions
-              will be other programming languages and related terms, not snakes.
+              programming language," BERT should strongly predict <em>python</em>—and its runner-up
+              predictions will be other programming languages and related terms, not snakes.
             </p>
-            <p>
-              Click any token below to mask it and see BERT's top predictions in real time.
-            </p>
+            <p>Click any token below to mask it and see BERT's top predictions in real time.</p>
             <MaskedLMPanel
               modelLoadStatus={state.loadStatus}
               mlmStatus={state.mlmStatus}
@@ -211,11 +214,10 @@ export default function Home() {
               <span>(v)))</span>
             </div>
             <p>
-              where <em>v</em> is a vocabulary token and <em>t</em> is an input token position.
-              ReLU clips negative logits to zero—most vocabulary entries score zero, giving the
-              vector its sparsity. The <code className="font-mono text-sm">log(1 + ·)</code>{' '}
-              compresses the remaining values so no single high-confidence prediction overwhelms
-              the rest.
+              where <em>v</em> is a vocabulary token and <em>t</em> is an input token position. ReLU
+              clips negative logits to zero—most vocabulary entries score zero, giving the vector
+              its sparsity. The <code className="font-mono text-sm">log(1 + ·)</code> compresses the
+              remaining values so no single high-confidence prediction overwhelms the rest.
             </p>
             <p>
               After activating all positions, SPLADE takes the <strong>maximum</strong> across
@@ -235,13 +237,13 @@ export default function Home() {
             </p>
             <SpladeAggregationDiagram />
             <p>
-              This sparse vector is the SPLADE representation. Its nonzero dimensions are
-              vocabulary tokens that BERT considered relevant at some position in the query, and
-              their weights reflect how strongly. Because the vector is sparse (most entries are
-              zero), it can be stored and queried using a standard inverted index—the same
-              infrastructure as BM25—while carrying the contextual signal of a transformer model.
-              That's the full picture: a single forward pass, a nonlinear activation, and a
-              max-pool, built on top of a model that was already trained to understand context.
+              This sparse vector is the SPLADE representation. Its nonzero dimensions are vocabulary
+              tokens that BERT considered relevant at some position in the query, and their weights
+              reflect how strongly. Because the vector is sparse (most entries are zero), it can be
+              stored and queried using a standard inverted index—the same infrastructure as
+              BM25—while carrying the contextual signal of a transformer model. That's the full
+              picture: a single forward pass, a nonlinear activation, and a max-pool, built on top
+              of a model that was already trained to understand context.
             </p>
           </div>
         </div>
