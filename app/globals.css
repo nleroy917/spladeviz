@@ -36,3 +36,43 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
+
+h1, h2, h3, h4, h5, h6 {
+  @apply text-foreground;
+}
+
+h1 {
+  @apply text-4xl font-bold tracking-tight mb-6;
+}
+
+h2 {
+  @apply text-3xl font-bold tracking-tight mb-4;
+}
+
+h3 {
+  @apply text-2xl font-bold tracking-tight mb-4;
+}
+
+h4 {
+  @apply text-xl font-bold tracking-tight mb-4;
+}
+
+h5 {
+  @apply text-lg font-bold tracking-tight mb-4;
+}
+
+h6 {
+  @apply text-lg font-bold tracking-tight mb-4;
+}
+
+p {
+  @apply leading-relaxed;
+}
+
+a {
+  @apply text-primary hover:underline transition-colors;
+}
+
+blockquote {
+  @apply border-l-4 border-secondary pl-4 italic text-muted-foreground my-6;
+}

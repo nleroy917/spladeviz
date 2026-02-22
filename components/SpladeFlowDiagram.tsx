@@ -59,7 +59,7 @@ export function SpladeFlowDiagram({
         {/* ── Row 2: Token ID boxes ── */}
         {tokens.map((t, i) => (
           <div
-            onClick={() => { if (!t.isSpecial) onLock(i); }}
+            onClick={() => { if (!t.isSpecial && lockedIdx !== i) onLock(i); }}
             onMouseEnter={() => { if (!t.isSpecial) onHover(i); }}
             onMouseLeave={() => onHover(null)}
             key={`id-${i}`}
@@ -114,7 +114,7 @@ export function SpladeFlowDiagram({
               'flex justify-center',
               !t.isSpecial && 'cursor-pointer'
             )}
-            onClick={() => { if (!t.isSpecial) onLock(i); }}
+            onClick={() => { if (!t.isSpecial && lockedIdx !== i) onLock(i); }}
             onMouseEnter={() => { if (!t.isSpecial) onHover(i); }}
             onMouseLeave={() => onHover(null)}
             title={t.isSpecial ? undefined : `Click to inspect "${t.token}" distribution`}

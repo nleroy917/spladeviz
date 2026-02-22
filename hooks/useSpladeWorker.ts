@@ -245,13 +245,13 @@ export function useSpladeWorker() {
     });
   }, []);
 
-  const runInference = useCallback((text: string) => {
+  const runInference = useCallback((text: string, topK: number = 20) => {
     if (!workerRef.current) return;
     workerRef.current.postMessage({
       type: 'RUN_INFERENCE',
       text,
-      topK: 50,
-      topM: 50,
+      topK,
+      topM: topK,
     });
   }, []);
 
