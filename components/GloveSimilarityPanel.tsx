@@ -10,25 +10,22 @@ const VOCAB_OPTIONS: { n: GloveVocabSize; label: string; approxMB: string }[] = 
   { n: 30, label: '30k words', approxMB: '~6 MB' },
 ];
 
-const DEFAULT_QUERY = 'heart attack treatment protocol';
+const DEFAULT_QUERY = 'documentation on python memory management';
 const TOP_K = 15;
 
 export function GloveSimilarityPanel() {
   const { state, load, findNearest } = useGloveEmbeddings();
   const [query, setQuery] = useState(DEFAULT_QUERY);
-  const [selectedVocab, setSelectedVocab] = useState<GloveVocabSize>(10);
+  const [selectedVocab, setSelectedVocab] = useState<GloveVocabSize>(30);
   const [activeToken, setActiveToken] = useState<string | null>(null);
 
   // Tokenize by splitting on whitespace, lowercasing
-  const tokens = useMemo(
-    () => query.trim().toLowerCase().split(/\s+/).filter(Boolean),
-    [query],
-  );
+  const tokens = useMemo(() => query.trim().toLowerCase().split(/\s+/).filter(Boolean), [query]);
 
-  // Auto-load 10k embeddings on mount
+  // Auto-load 30k embeddings on mount
   useEffect(() => {
-    load(10);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    load(30);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Auto-select first token once loaded, or when the query changes after loading
@@ -50,17 +47,24 @@ export function GloveSimilarityPanel() {
   const isLoading = state.status === 'loading';
 
   return (
-    <div className="rounded-lg border border-border bg-card p-5 space-y-4">
+    <div className="space-y-4 rounded-lg border border-border bg-card p-5">
       {/* Header row */}
+      <h4 className="mb-2">Static word embeddings (GloVe)</h4>
+      <p className="mb-2 text-sm text-muted-foreground">
+        A naive approach to query expansion uses static word embeddings. Click{' '}
+        <strong>Load embeddings</strong>, then click any token in your query to see its nearest
+        neighbors in GloVe embedding space. Notice how context-free these neighbors are —{' '}
+        <em>heart</em> pulls in <em>pain</em> and <em>blood</em>, not <em>myocardial</em>.
+      </p>
       <div className="flex flex-wrap items-center gap-3">
-        <div className="flex rounded-md border border-border overflow-hidden text-sm">
+        <div className="flex overflow-hidden rounded-md border border-border text-sm">
           {VOCAB_OPTIONS.map(({ n, label, approxMB }) => (
             <button
               key={n}
               onClick={() => setSelectedVocab(n)}
               disabled={isLoading}
               className={cn(
-                'px-3 py-1.5 transition-colors border-r border-border last:border-r-0',
+                'border-r border-border px-3 py-1.5 transition-colors last:border-r-0',
                 selectedVocab === n
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-background text-muted-foreground hover:bg-muted',
@@ -71,14 +75,13 @@ export function GloveSimilarityPanel() {
             </button>
           ))}
         </div>
-
         <button
           onClick={() => load(selectedVocab)}
           disabled={isLoading}
           className={cn(
-            'px-4 py-1.5 rounded-md text-sm font-medium transition-colors',
+            'rounded-md px-4 py-1.5 text-sm font-medium transition-colors',
             isLoading
-              ? 'bg-muted text-muted-foreground cursor-not-allowed'
+              ? 'cursor-not-allowed bg-muted text-muted-foreground'
               : 'bg-primary text-primary-foreground hover:bg-primary/90',
           )}
         >
@@ -100,9 +103,7 @@ export function GloveSimilarityPanel() {
         <>
           {/* Query input */}
           <div className="space-y-1">
-            <label className="text-xs text-muted-foreground uppercase tracking-wide">
-              Query
-            </label>
+            <label className="text-xs uppercase tracking-wide text-muted-foreground">Query</label>
             <input
               type="text"
               value={query}
@@ -120,7 +121,7 @@ export function GloveSimilarityPanel() {
 
           {/* Token chips */}
           <div className="space-y-1">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">
               Click a token to explore its GloVe neighbors
             </p>
             <div className="flex flex-wrap gap-2">
@@ -131,11 +132,11 @@ export function GloveSimilarityPanel() {
                     key={token}
                     onClick={() => setActiveToken(isActive ? null : token)}
                     className={cn(
-                      'inline-flex items-center rounded px-2 py-1 text-sm font-mono transition-colors',
+                      'inline-flex items-center rounded px-2 py-1 font-mono text-sm transition-colors',
                       'border focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1',
                       isActive
                         ? 'border-primary bg-primary text-primary-foreground'
-                        : 'border-slate-200 bg-slate-100 text-slate-700 hover:bg-primary/5 hover:border-primary/40',
+                        : 'border-slate-200 bg-slate-100 text-slate-700 hover:border-primary/40 hover:bg-primary/5',
                     )}
                   >
                     {token}
@@ -143,9 +144,7 @@ export function GloveSimilarityPanel() {
                 );
               })}
               {tokens.length === 0 && (
-                <span className="text-sm text-muted-foreground italic">
-                  Type a query above.
-                </span>
+                <span className="text-sm italic text-muted-foreground">Type a query above.</span>
               )}
             </div>
           </div>
@@ -156,26 +155,26 @@ export function GloveSimilarityPanel() {
               <p className="text-sm font-medium">
                 Most similar words to{' '}
                 <span className="font-mono text-primary">&ldquo;{activeToken}&rdquo;</span>
-                <span className="text-xs text-muted-foreground font-normal ml-2">
+                <span className="ml-2 text-xs font-normal text-muted-foreground">
                   (cosine similarity, static GloVe 6B 50d)
                 </span>
               </p>
 
               {neighbors.length === 0 ? (
-                <p className="text-sm text-muted-foreground italic">
-                  &ldquo;{activeToken}&rdquo; is not in the {state.vocabSize}k vocabulary.
-                  Try a larger vocab size or a simpler word.
+                <p className="text-sm italic text-muted-foreground">
+                  &ldquo;{activeToken}&rdquo; is not in the {state.vocabSize}k vocabulary. Try a
+                  larger vocab size or a simpler word.
                 </p>
               ) : (
                 <div className="space-y-1">
                   {neighbors.map(({ word, score }) => {
                     const pct = Math.max((score / maxScore) * 100, 0.5);
                     return (
-                      <div key={word} className="flex items-center gap-2 text-sm font-mono">
+                      <div key={word} className="flex items-center gap-2 font-mono text-sm">
                         <span className="w-28 shrink-0 truncate text-right text-foreground">
                           {word}
                         </span>
-                        <div className="flex-1 h-4 bg-muted rounded-sm overflow-hidden">
+                        <div className="h-4 flex-1 overflow-hidden rounded-sm bg-muted">
                           <div
                             className="h-full rounded-sm transition-all duration-200"
                             style={{

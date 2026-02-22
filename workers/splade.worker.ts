@@ -183,11 +183,86 @@ async function runInference(text: string, topK: number, topM: number) {
   }
 }
 
+async function runMlm(text: string, maskedWordIdx: number, topK: number) {
+  if (!tokenizer || !model) {
+    post({ type: 'MLM_ERROR', message: 'Model not loaded' });
+    return;
+  }
+
+  post({ type: 'MLM_RUNNING' });
+
+  try {
+    // Reconstruct text with [MASK] replacing the target word
+    const words = text.trim().split(/\s+/);
+    const maskedWord = words[maskedWordIdx] ?? '';
+    words[maskedWordIdx] = '[MASK]';
+    const maskedText = words.join(' ');
+
+    const inputs = await tokenizer(maskedText, { truncation: true, max_length: 512 });
+
+    // Locate the [MASK] token position
+    const inputIds = inputs.input_ids.data;
+    const maskTokenId: number = (tokenizer.mask_token_id as number | undefined) ?? 103;
+
+    let maskPos = -1;
+    for (let i = 0; i < inputIds.length; i++) {
+      if (Number(inputIds[i]) === maskTokenId) {
+        maskPos = i;
+        break;
+      }
+    }
+
+    if (maskPos === -1) {
+      post({ type: 'MLM_ERROR', message: 'Could not find [MASK] in tokenized input' });
+      return;
+    }
+
+    // Forward pass
+    const output = await model(inputs);
+    const logits = output.logits; // [1, seqLen, vocabSize]
+    const [, , vSize] = logits.dims;
+    const raw = logits.data as Float32Array;
+    const offset = maskPos * vSize;
+
+    // Numerically stable softmax over the mask position's logits
+    let maxLogit = -Infinity;
+    for (let i = 0; i < vSize; i++) {
+      if (raw[offset + i] > maxLogit) maxLogit = raw[offset + i];
+    }
+    const probs = new Float32Array(vSize);
+    let sumExp = 0;
+    for (let i = 0; i < vSize; i++) {
+      probs[i] = Math.exp(raw[offset + i] - maxLogit);
+      sumExp += probs[i];
+    }
+    for (let i = 0; i < vSize; i++) probs[i] /= sumExp;
+
+    // Sort vocab indices by descending probability, decode, collect top-K whole tokens
+    const sortedIndices = Array.from({ length: vSize }, (_, i) => i);
+    sortedIndices.sort((a, b) => probs[b] - probs[a]);
+
+    const predictions: WeightEntry[] = [];
+    for (const idx of sortedIndices) {
+      if (predictions.length >= topK) break;
+      const decoded = tokenizer!.decode([idx], { skip_special_tokens: true }).trim();
+      // Skip empty strings, subword continuations (##), and special tokens
+      if (!decoded || decoded.startsWith('##') || decoded.startsWith('[')) continue;
+      predictions.push({ word: decoded, weight: probs[idx] });
+    }
+
+    post({ type: 'MLM_RESULT', predictions, maskedWord });
+  } catch (err) {
+    post({ type: 'MLM_ERROR', message: err instanceof Error ? err.message : String(err) });
+  }
+}
+
 self.addEventListener('message', (event: MessageEvent<WorkerIncomingMessage>) => {
   const msg = event.data;
   if (msg.type === 'LOAD_MODEL') {
     loadModel(msg.modelId, msg.dtype, msg.device);
   } else if (msg.type === 'RUN_INFERENCE') {
     runInference(msg.text, msg.topK, msg.topM);
+  } else if (msg.type === 'RUN_MLM') {
+    runMlm(msg.text, msg.maskedWordIdx, msg.topK);
   }
 });

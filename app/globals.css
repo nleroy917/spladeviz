@@ -4,19 +4,19 @@
 
 @layer base {
   :root {
-    --background: 40 33% 97%;        /* warm cream ~#faf8f5 */
-    --foreground: 0 0% 10%;          /* near-black */
-    --card: 40 25% 99%;              /* slightly warmer white */
+    --background: 40 33% 97%; /* warm cream ~#faf8f5 */
+    --foreground: 0 0% 10%; /* near-black */
+    --card: 40 25% 99%; /* slightly warmer white */
     --card-foreground: 0 0% 10%;
     --popover: 40 25% 99%;
     --popover-foreground: 0 0% 10%;
-    --primary: 217 91% 60%;          /* vibrant blue */
+    --primary: 217 91% 60%; /* vibrant blue */
     --primary-foreground: 0 0% 100%;
     --secondary: 40 20% 93%;
     --secondary-foreground: 0 0% 10%;
     --muted: 40 20% 93%;
     --muted-foreground: 30 6% 48%;
-    --accent: 217 91% 90%;           /* pale blue tint */
+    --accent: 217 91% 90%; /* pale blue tint */
     --accent-foreground: 217 91% 35%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
@@ -33,36 +33,43 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    font-feature-settings:
+      'rlig' 1,
+      'calt' 1;
   }
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   @apply text-foreground;
 }
 
 h1 {
-  @apply text-4xl font-bold tracking-tight mb-6;
+  @apply mb-6 text-4xl font-bold tracking-tight;
 }
 
 h2 {
-  @apply text-3xl font-bold tracking-tight mb-4;
+  @apply mb-4 text-3xl font-bold tracking-tight;
 }
 
 h3 {
-  @apply text-2xl font-bold tracking-tight mb-4;
+  @apply mb-4 text-2xl font-bold tracking-tight;
 }
 
 h4 {
-  @apply text-xl font-bold tracking-tight mb-4;
+  @apply mb-4 text-xl font-bold tracking-tight;
 }
 
 h5 {
-  @apply text-lg font-bold tracking-tight mb-4;
+  @apply mb-4 text-lg font-bold tracking-tight;
 }
 
 h6 {
-  @apply text-lg font-bold tracking-tight mb-4;
+  @apply mb-4 text-lg font-bold tracking-tight;
 }
 
 p {
@@ -70,9 +77,9 @@ p {
 }
 
 a {
-  @apply text-primary hover:underline transition-colors;
+  @apply text-primary transition-colors hover:underline;
 }
 
 blockquote {
-  @apply border-l-4 border-secondary pl-4 italic text-muted-foreground my-6;
+  @apply my-6 border-l-4 border-secondary pl-4 italic text-muted-foreground;
 }

@@ -23,6 +23,8 @@ export type InferenceStatus =
   | 'done'
   | 'error';
 
+export type MlmStatus = 'idle' | 'running' | 'done' | 'error';
+
 export type SpladeState = {
   modelId: string;
   loadStatus: LoadStatus;
@@ -40,6 +42,11 @@ export type SpladeState = {
   sparseVector: WeightEntry[];
   hoveredTokenIdx: number | null;
   lockedTokenIdx: number | null;
+
+  mlmStatus: MlmStatus;
+  mlmMaskedWord: string | null;
+  mlmPredictions: WeightEntry[];
+  mlmError: string | null;
 };
 
 const initialState: SpladeState = {
@@ -59,6 +66,11 @@ const initialState: SpladeState = {
   sparseVector: [],
   hoveredTokenIdx: null,
   lockedTokenIdx: null,
+
+  mlmStatus: 'idle',
+  mlmMaskedWord: null,
+  mlmPredictions: [],
+  mlmError: null,
 };
 
 // ---------------------------------------------------------------------------
@@ -80,7 +92,10 @@ type Action =
   | { type: 'INFERENCE_ERROR'; message: string }
   | { type: 'HOVER_TOKEN'; idx: number | null }
   | { type: 'LOCK_TOKEN'; idx: number | null }
-  | { type: 'SET_MODEL'; modelId: string };
+  | { type: 'SET_MODEL'; modelId: string }
+  | { type: 'MLM_RUNNING' }
+  | { type: 'MLM_DONE'; maskedWord: string; predictions: WeightEntry[] }
+  | { type: 'MLM_ERROR'; message: string };
 
 function reducer(state: SpladeState, action: Action): SpladeState {
   switch (action.type) {
@@ -155,6 +170,17 @@ function reducer(state: SpladeState, action: Action): SpladeState {
       };
     case 'SET_MODEL':
       return { ...state, modelId: action.modelId };
+    case 'MLM_RUNNING':
+      return { ...state, mlmStatus: 'running', mlmError: null };
+    case 'MLM_DONE':
+      return {
+        ...state,
+        mlmStatus: 'done',
+        mlmMaskedWord: action.maskedWord,
+        mlmPredictions: action.predictions,
+      };
+    case 'MLM_ERROR':
+      return { ...state, mlmStatus: 'error', mlmError: action.message };
     default:
       return state;
   }
@@ -212,6 +238,15 @@ export function useSpladeWorker() {
         case 'INFERENCE_ERROR':
           dispatch({ type: 'INFERENCE_ERROR', message: msg.message });
           break;
+        case 'MLM_RUNNING':
+          dispatch({ type: 'MLM_RUNNING' });
+          break;
+        case 'MLM_RESULT':
+          dispatch({ type: 'MLM_DONE', maskedWord: msg.maskedWord, predictions: msg.predictions });
+          break;
+        case 'MLM_ERROR':
+          dispatch({ type: 'MLM_ERROR', message: msg.message });
+          break;
       }
     };
 
@@ -263,5 +298,9 @@ export function useSpladeWorker() {
     dispatch({ type: 'LOCK_TOKEN', idx });
   }, []);
 
-  return { state, loadModel, runInference, hoverToken, lockToken };
+  const runMlm = useCallback((text: string, maskedWordIdx: number, topK = 15) => {
+    workerRef.current?.postMessage({ type: 'RUN_MLM', text, maskedWordIdx, topK });
+  }, []);
+
+  return { state, loadModel, runInference, hoverToken, lockToken, runMlm };
 }

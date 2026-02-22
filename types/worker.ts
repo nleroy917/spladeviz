@@ -26,7 +26,16 @@ export type RunInferenceMessage = {
   topM: number;
 };
 
-export type WorkerIncomingMessage = LoadModelMessage | RunInferenceMessage;
+export type RunMlmMessage = {
+  type: 'RUN_MLM';
+  /** Full query text (unmasked). */
+  text: string;
+  /** Index of the space-split word to replace with [MASK]. */
+  maskedWordIdx: number;
+  topK: number;
+};
+
+export type WorkerIncomingMessage = LoadModelMessage | RunInferenceMessage | RunMlmMessage;
 
 // Worker → Main messages
 export type ModelLoadingProgressMessage = {
@@ -69,10 +78,30 @@ export type InferenceErrorMessage = {
   message: string;
 };
 
+export type MlmRunningMessage = {
+  type: 'MLM_RUNNING';
+};
+
+export type MlmResultMessage = {
+  type: 'MLM_RESULT';
+  /** Top-K predicted tokens, sorted by probability desc. weight = probability (0–1). */
+  predictions: WeightEntry[];
+  /** The original word that was replaced by [MASK]. */
+  maskedWord: string;
+};
+
+export type MlmErrorMessage = {
+  type: 'MLM_ERROR';
+  message: string;
+};
+
 export type WorkerOutgoingMessage =
   | ModelLoadingProgressMessage
   | ModelLoadedMessage
   | ModelErrorMessage
   | InferenceRunningMessage
   | InferenceResultMessage
-  | InferenceErrorMessage;
+  | InferenceErrorMessage
+  | MlmRunningMessage
+  | MlmResultMessage
+  | MlmErrorMessage;
