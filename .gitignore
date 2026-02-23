@@ -5,3 +5,8 @@ node_modules/
 .env.local
 
 out/
+
+# GloVe binary files are hosted on HuggingFace — keep locally for dev but don't commit
+public/glove/*.bin
+
+.venv/

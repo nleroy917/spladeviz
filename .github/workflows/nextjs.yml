@@ -75,6 +75,10 @@ jobs:
         run: ${{ steps.detect-package-manager.outputs.manager }} ${{ steps.detect-package-manager.outputs.command }}
       - name: Build with Next.js
         run: ${{ steps.detect-package-manager.outputs.runner }} next build
+        env:
+          # Set this repo variable in GitHub → Settings → Variables → Actions
+          # Value: https://huggingface.co/datasets/nleroy917/spladeviz-glove/resolve/main/
+          NEXT_PUBLIC_GLOVE_BASE_URL: ${{ vars.GLOVE_BASE_URL }}
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
