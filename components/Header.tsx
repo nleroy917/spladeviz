@@ -10,6 +10,11 @@ type Props = {
 export function Header({ modelId, loadStatus, fromCache }: Props) {
   return (
     <header className="px-6 py-4">
+      <div className="mb-2 flex flex-row items-start pl-8">
+        <a href="/" className="text-sm">
+          {'<-'} nathanleroy.dev
+        </a>
+      </div>
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
         <div>
           <h1 className="text-xl font-semibold tracking-tight">
